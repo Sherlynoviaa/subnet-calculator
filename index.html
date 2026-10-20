@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Subnet Calculator</title>
+  <meta name="description" content="Kalkulator subnet IPv4 sederhana dengan operasi bitwise JavaScript.">
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-2: #131a33;
+      --card: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #eef2ff;
+      --muted: #9aa4c7;
+      --accent: #6d8bff;
+      --accent-2: #22d3ee;
+      --danger: #ff6b81;
+      --ok: #34d399;
+      --radius: 16px;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 600px at 15% -10%, rgba(109, 139, 255, 0.28), transparent 60%),
+        radial-gradient(900px 500px at 110% 110%, rgba(34, 211, 238, 0.18), transparent 55%),
+        linear-gradient(160deg, var(--bg), var(--bg-2));
+      background-attachment: fixed;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 760px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(109, 139, 255, 0.14);
+      border: 1px solid rgba(109, 139, 255, 0.35);
+      color: #c7d2ff;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      box-shadow: 0 0 12px var(--accent-2);
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.3rem);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    header p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      padding: 24px;
+    }
+
+    form {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      flex: 1 1 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(5, 9, 22, 0.55);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    input::placeholder {
+      color: #5f6a8c;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(109, 139, 255, 0.18);
+      background: rgba(5, 9, 22, 0.8);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 12px;
+      padding: 14px 22px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      box-shadow: 0 10px 24px rgba(109, 139, 255, 0.35);
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(109, 139, 255, 0.45);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--card-border);
+      box-shadow: none;
+      color: var(--muted);
+      padding: 14px 18px;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+      color: var(--text);
+    }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(255, 107, 129, 0.12);
+      border: 1px solid rgba(255, 107, 129, 0.35);
+      color: #ffb3bf;
+      font-size: 0.9rem;
+    }
+
+    .error.show {
+      display: block;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .results {
+      margin-top: 22px;
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+      animation: fadeUp 0.35s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, rgba(109, 139, 255, 0.16), rgba(34, 211, 238, 0.08));
+      border: 1px solid rgba(109, 139, 255, 0.3);
+    }
+
+    .summary .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .summary .value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1.05rem;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .pill {
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #06251c;
+      background: var(--ok);
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .result-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      min-width: 0;
+    }
+
+    .result-item .label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 7px;
+    }
+
+    .result-item .label::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      flex: none;
+    }
+
+    .result-item .value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .result-item.span-2 {
+      grid-column: span 2;
+    }
+
+    .hint {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .hint code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #c7d2ff;
+      background: rgba(255, 255, 255, 0.07);
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 560px) {
+      .card { padding: 18px; }
+      .actions { flex: 1 1 100%; }
+      .actions button { flex: 1; }
+      .result-item.span-2 { grid-column: span 1; }
+      .summary { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="badge">IPv4 Tools</div>
+      <h1>Network <span>Subnet Calculator</span></h1>
+      <p>Hitung network, broadcast, dan rentang host secara instan.</p>
+    </header>
+
+    <section class="card">
+      <form id="subnet-form" novalidate>
+        <div class="field">
+          <label for="cidr">Alamat IP / CIDR</label>
+          <input
+            id="cidr"
+            name="cidr"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="192.168.1.10/24"
+            aria-describedby="error-message"
+          >
+        </div>
+        <div class="actions">
+          <button type="submit">Hitung</button>
+          <button type="button" class="btn-ghost" id="reset-btn">Reset</button>
+        </div>
+      </form>
+
+      <div class="error" id="error-message" role="alert"></div>
+
+      <div class="results" id="results" aria-live="polite">
+        <div class="summary">
+          <div>
+            <div class="label">Subnet</div>
+            <div class="value" id="subnet-summary">—</div>
+          </div>
+          <div class="pill" id="cidr-pill">/24</div>
+        </div>
+        <div class="grid">
+          <div class="result-item">
+            <div class="label">Network Address</div>
+            <div class="value" id="network">—</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Broadcast Address</div>
+            <div class="value" id="broadcast">—</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Subnet Mask</div>
+            <div class="value" id="mask">—</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Jumlah Host</div>
+            <div class="value" id="hosts">—</div>
+          </div>
+          <div class="result-item span-2">
+            <div class="label">Range IP Tersedia</div>
+            <div class="value" id="range">—</div>
+          </div>
+          <div class="result-item span-2">
+            <div class="label">Total Alamat di Subnet</div>
+            <div class="value" id="total">—</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint">Contoh: <code>192.168.1.10/24</code> · <code>10.0.0.5/8</code> · <code>172.16.32.1/20</code></p>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const form = document.getElementById("subnet-form");
+    const input = document.getElementById("cidr");
+    const errorBox = document.getElementById("error-message");
+    const results = document.getElementById("results");
+    const resetBtn = document.getElementById("reset-btn");
+
+    const els = {
+      summary: document.getElementById("subnet-summary"),
+      pill: document.getElementById("cidr-pill"),
+      network: document.getElementById("network"),
+      broadcast: document.getElementById("broadcast"),
+      mask: document.getElementById("mask"),
+      hosts: document.getElementById("hosts"),
+      range: document.getElementById("range"),
+      total: document.getElementById("total"),
+    };
+
+    /**
+     * Mengubah string IPv4 menjadi bilangan bulat 32-bit tanpa tanda.
+     *
+     * Setiap oktet digeser ke posisinya (oktet 1 = 24 bit, oktet 2 = 16 bit,
+     * oktet 3 = 8 bit, oktet 4 = 0 bit), lalu digabung dengan operator OR (|).
+     * Contoh: 192.168.1.10 -> 11000000 10101000 00000001 00001010.
+     *
+     * Operator >>> 0 memastikan hasilnya tetap unsigned (0 .. 4294967295),
+     * karena operasi bitwise JavaScript bekerja pada signed 32-bit.
+     */
+    function ipToInt(ip) {
+      return ip
+        .split(".")
+        .map(Number)
+        .reduce((acc, octet) => ((acc << 8) | octet) >>> 0, 0);
+    }
+
+    /**
+     * Mengubah bilangan bulat 32-bit kembali menjadi string IPv4.
+     * Setiap oktet diambil dengan menggeser bit lalu masking dengan 0xFF
+     * (11111111) agar hanya 8 bit terakhir yang tersisa.
+     */
+    function intToIp(int) {
+      return [
+        (int >>> 24) & 0xff,
+        (int >>> 16) & 0xff,
+        (int >>> 8) & 0xff,
+        int & 0xff,
+      ].join(".");
+    }
+
+    /**
+     * Membuat subnet mask dari prefix CIDR.
+     *
+     * 0xFFFFFFFF adalah 32 bit angka 1. Menggeser ke kiri sebanyak (32 - prefix)
+     * akan mengisi bit host dengan 0. Contoh /24: geser 8 bit -> 24 bit awal = 1.
+     * Untuk /0 hasil shift tidak terdefinisi, jadi ditangani khusus.
+     */
+    function prefixToMask(prefix) {
+      return prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+    }
+
+    /**
+     * Validasi input "a.b.c.d/prefix".
+     * Mengembalikan objek { ipInt, prefix } atau melempar Error berisi pesan.
+     */
+    function parseCidr(raw) {
+      const value = raw.trim();
+      const match = value.match(/^(\d{1,3}(?:\.\d{1,3}){3})\s*\/\s*(\d{1,2})$/);
+
+      if (!match) {
+        throw new Error("Format salah. Gunakan format seperti 192.168.1.10/24.");
+      }
+
+      const ip = match[1];
+      const prefix = Number(match[2]);
+      const octets = ip.split(".").map(Number);
+
+      if (octets.some((o) => Number.isNaN(o) || o < 0 || o > 255)) {
+        throw new Error("Setiap oktet IP harus berada di antara 0 dan 255.");
+      }
+
+      if (prefix < 0 || prefix > 32) {
+        throw new Error("Prefix CIDR harus berada di antara 0 dan 32.");
+      }
+
+      return { ipInt: ipToInt(ip), prefix };
+    }
+
+    function calculate(ipInt, prefix) {
+      const mask = prefixToMask(prefix);
+
+      // Network address: mempertahankan bit jaringan dan menghapus bit host.
+      // Operator AND (&) menghasilkan 1 hanya jika kedua bit bernilai 1.
+      const network = (ipInt & mask) >>> 0;
+
+      // Broadcast address: bit jaringan dari network di-OR dengan kebalikan mask
+      // (~mask). Bagian host menjadi semua 1 (255 di setiap oktet host).
+      const broadcast = (network | (~mask >>> 0)) >>> 0;
+
+      // Jumlah alamat total = 2^(32 - prefix). Bitwise shift kiri cepat untuk
+      // pangkat dua, tetapi untuk prefix kecil kita pakai Math.pow agar aman.
+      const totalAddresses = Math.pow(2, 32 - prefix);
+
+      let hostCount;
+      let range;
+
+      if (prefix === 32) {
+        // /32 adalah satu host tunggal (tidak ada network/broadcast terpisah).
+        hostCount = 1;
+        range = `${intToIp(network)}`;
+      } else if (prefix === 31) {
+        // /31 dipakai untuk point-to-point: kedua alamat dapat digunakan.
+        hostCount = 2;
+        range = `${intToIp(network)} – ${intToIp(broadcast)}`;
+      } else {
+        // Normal: network dan broadcast tidak dapat dipakai host.
+        hostCount = totalAddresses - 2;
+        range = `${intToIp(network + 1)} – ${intToIp(broadcast - 1)}`;
+      }
+
+      return {
+        network: intToIp(network),
+        broadcast: intToIp(broadcast),
+        mask: intToIp(mask),
+        prefix,
+        hostCount,
+        totalAddresses,
+        range,
+      };
+    }
+
+    function formatNumber(n) {
+      return n.toLocaleString("id-ID");
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.add("show");
+      results.classList.remove("show");
+    }
+
+    function clearError() {
+      errorBox.textContent = "";
+      errorBox.classList.remove("show");
+    }
+
+    function render(result) {
+      els.summary.textContent = `${result.network}/${result.prefix}`;
+      els.pill.textContent = `/${result.prefix}`;
+      els.network.textContent = result.network;
+      els.broadcast.textContent = result.broadcast;
+      els.mask.textContent = result.mask;
+      els.hosts.textContent = formatNumber(result.hostCount);
+      els.range.textContent = result.range;
+      els.total.textContent = `${formatNumber(result.totalAddresses)} alamat`;
+
+      results.classList.add("show");
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      clearError();
+
+      try {
+        const { ipInt, prefix } = parseCidr(input.value);
+        render(calculate(ipInt, prefix));
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      input.value = "";
+      clearError();
+      results.classList.remove("show");
+      input.focus();
+    });
+
+    input.addEventListener("input", () => {
+      if (errorBox.classList.contains("show")) clearError();
+    });
+
+    // Hitung contoh awal agar tampilan tidak kosong saat halaman dibuka.
+    input.value = "192.168.1.10/24";
+    render(calculate(parseCidr(input.value).ipInt, parseCidr(input.value).prefix));
+  </script>
+</body>
+</html>
